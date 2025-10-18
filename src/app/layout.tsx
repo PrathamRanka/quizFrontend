@@ -1,13 +1,14 @@
 // app/layout.jsx
 import { AuthProvider } from '../app/contexts/AuthContext';
-import './globals.css'; // Your global stylesheet
+import './globals.css';
+import type { ReactNode } from 'react';
 
 export const metadata = {
   title: 'OWASP Quiz Portal',
   description: 'Recruitment quiz for the OWASP Student Chapter.',
 };
 
-export default function RootLayout({ children }) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body>

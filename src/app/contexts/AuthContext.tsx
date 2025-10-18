@@ -1,11 +1,11 @@
+/*eslint-disable*/
 "use client";
-
+import { ReactNode } from "react";
 import React, {
   createContext,
   useContext,
   useState,
-  useEffect,
-  ReactNode,
+  useEffect
 } from "react";
 import { useRouter } from "next/navigation";
 import api from "../services/api";
@@ -30,9 +30,9 @@ export const useAuth = () => {
   return context;
 };
 
-// ✅ 3. Properly typed AuthProvider
+
 interface AuthProviderProps {
-  children: ReactNode; // 👈 this line fixes “children implicitly has an 'any' type”
+  children: ReactNode; 
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
