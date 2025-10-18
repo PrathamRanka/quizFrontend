@@ -18,7 +18,7 @@ export default function ResultsPage() {
     return (
         <div className="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-md">
             <h1 className="text-4xl font-bold text-center mb-4">Quiz Complete!</h1>
-            <p className="text-center text-2xl text-blue-600 mb-8">Your Final Score: {resultsData.score}</p>
+            {/* <p className="text-center text-2xl text-blue-600 mb-8">Your Final Score: {resultsData.score}</p> */}
             {/* Map over results to display them */}
             <div className="text-center mt-8">
                 <Link href="/quiz/instructions" className="bg-blue-600 text-white px-6 py-2 rounded">
