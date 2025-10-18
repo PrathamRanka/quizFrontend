@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../../contexts/AuthContext'; // CORRECTED: Import useAuth hook
+import { useAuth } from '../../contexts/AuthContext'; 
 import Link from 'next/link';
 
 export default function LoginPage() {
@@ -11,7 +11,7 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   
-  const { login } = useAuth(); // CORRECTED: Use the useAuth() hook
+  const { login } = useAuth(); 
   const router = useRouter();
 
   const handleSubmit = async (e) => {

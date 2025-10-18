@@ -2,8 +2,8 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import api from "../../../../../services/api";
-import { RECRUITMENT_QUIZ_ID } from "../../../../../lib/constants";
+import api from "../../../../services/api";
+import { RECRUITMENT_QUIZ_ID } from "../../../../lib/constants";
 
 export default function InstructionsPage() {
   const router = useRouter();
@@ -34,7 +34,7 @@ export default function InstructionsPage() {
     <div className="bg-white rounded-lg shadow-md p-8">
       <h2 className="text-2xl font-bold text-center mb-6">Quiz Instructions</h2>
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 space-y-6">
-        {/* Rules, Requirements, Privacy Notice can be listed here */}
+        
         <p>You have 30 minutes to complete the quiz. Ensure your camera and microphone are active. Do not switch tabs. Good luck!</p>
         {error && <p className="text-red-600 text-center font-semibold">{error}</p>}
       </div>

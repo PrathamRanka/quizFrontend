@@ -15,7 +15,7 @@ export default function PermissionsPage() {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       setCameraGranted(stream.getVideoTracks().length > 0);
       setMicGranted(stream.getAudioTracks().length > 0);
-      // Stop the tracks immediately after checking to turn off the camera/mic light
+    
       stream.getTracks().forEach((track) => track.stop());
     } catch (err) {
       setError("Permissions denied. Please allow camera and microphone access in your browser settings to continue.");
@@ -23,7 +23,7 @@ export default function PermissionsPage() {
     }
   };
   
-  // Request permissions on component mount
+  
   useEffect(() => {
     requestPermissions();
   }, []);

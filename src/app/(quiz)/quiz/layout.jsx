@@ -1,11 +1,11 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { AuthContext} from "../../../../contexts/AuthContext";
+import { useAuth } from "../../contexts/AuthContext";
 
 export default function PreQuizLayout({ children }) {
   const pathname = usePathname();
-  const { user, logout } = AuthContext();
+  const { user, logout } = useAuth();
 
   const steps = [
     { label: "Instructions", path: "/quiz/instructions" },
