@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import api from "../../../../services/api";
-
 
 // Helper Icon Components
 const BookmarkIcon = ({ filled }) => ( <svg className="w-5 h-5" fill={filled ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg> );
@@ -25,7 +24,9 @@ export default function QuestionPage() {
   
   // Proctoring & UI State
   const [tabSwitchViolations, setTabSwitchViolations] = useState(0);
-  const [fullscreenExited, setFullscreenExited] = useState(true);
+  const [fullscreenExitCount, setFullscreenExitCount] = useState(0);
+  const [fullscreenWarning, setFullscreenWarning] = useState(null);
+  const [isQuizTerminated, setIsQuizTerminated] = useState(false);
   const [showSubmitWarning, setShowSubmitWarning] = useState(false);
   
   const router = useRouter();
@@ -33,7 +34,47 @@ export default function QuestionPage() {
   const { quizId } = params;
   const mainWrapperRef = useRef(null);
 
-  // --- Data Fetching & Initial State Hydration ---
+  // --- Submission Logic ---
+  const handleSubmitQuiz = useCallback(async (force = false, reason = "Quiz submitted.") => {
+    const unansweredCount = Object.values(answers).filter(a => a === null).length;
+    if (unansweredCount > 0 && !force) {
+      setShowSubmitWarning(true);
+      return;
+    }
+    
+    setLoading(true);
+    setShowSubmitWarning(false);
+    const sessionId = localStorage.getItem('sessionId');
+    if (!sessionId) { 
+      setLoading(false); 
+      return alert("Session ID missing."); 
+    }
+
+    const formattedAnswers = Object.entries(answers).filter(([, val]) => val !== null).map(([key, val]) => ({ questionId: key, selectedOption: val }));
+    
+    try {
+      const response = await api.post(`/sessions/${sessionId}/submit`, { answers: formattedAnswers });
+      if (response.data.success) {
+        localStorage.removeItem(`quiz-progress-${sessionId}`);
+        sessionStorage.setItem('quizResults', JSON.stringify(response.data.data));
+        if (reason) sessionStorage.setItem('quizTerminationReason', reason);
+        router.push('/quiz/results');
+      } else {
+         alert(`Submission failed: ${response.data.message || 'Error.'}`);
+         setLoading(false);
+      }
+    } catch (err) {
+      alert("An error occurred during submission.");
+      setLoading(false);
+    }
+  }, [answers, router]);
+
+  const handleSubmitQuizRef = useRef(handleSubmitQuiz);
+  useEffect(() => {
+    handleSubmitQuizRef.current = handleSubmitQuiz;
+  }, [handleSubmitQuiz]);
+
+  // --- Data Fetching & State Hydration ---
   useEffect(() => {
     const startQuizAndFetch = async () => {
       const sessionId = localStorage.getItem('sessionId');
@@ -50,17 +91,16 @@ export default function QuestionPage() {
         
         if (savedProgress) {
             const progress = JSON.parse(savedProgress);
-            setAnswers(progress.answers || fetchedQuestions.reduce((acc, q) => ({ ...acc, [q._id]: null }), {}));
-            setBookmarked(progress.bookmarked || fetchedQuestions.reduce((acc, q) => ({ ...acc, [q._id]: false }), {}));
-            setVisited(progress.visited || fetchedQuestions.reduce((acc, q) => ({ ...acc, [q._id]: false }), {}));
+            setAnswers(progress.answers || {});
+            setBookmarked(progress.bookmarked || {});
+            setVisited(progress.visited || {});
             setCurrentQuestionIndex(progress.currentQuestionIndex || 0);
-            setTimeLeft(progress.timeLeft || 1800);
+            setTimeLeft(progress.timeLeft || 1200);
         } else {
             setAnswers(fetchedQuestions.reduce((acc, q) => ({ ...acc, [q._id]: null }), {}));
             setBookmarked(fetchedQuestions.reduce((acc, q) => ({ ...acc, [q._id]: false }), {}));
             setVisited(fetchedQuestions.reduce((acc, q) => ({ ...acc, [q._id]: false }), {}));
         }
-
       } catch (err) { setError("Failed to load quiz."); } finally { setLoading(false); }
     };
     if(quizId) startQuizAndFetch();
@@ -75,48 +115,18 @@ export default function QuestionPage() {
             localStorage.setItem(`quiz-progress-${sessionId}`, JSON.stringify(progress));
         }
     };
-    const interval = setInterval(saveProgress, 5000); // Save every 5 seconds
+    const interval = setInterval(saveProgress, 5000);
     return () => clearInterval(interval);
   }, [answers, bookmarked, visited, currentQuestionIndex, timeLeft, questions, loading]);
 
-  // --- Submission Logic ---
-  const handleSubmitQuiz = useCallback(async (force = false) => {
-    const unansweredCount = Object.values(answers).filter(a => a === null).length;
-    if (unansweredCount > 0 && !force) {
-      setShowSubmitWarning(true);
-      return;
-    }
-    
-    setLoading(true);
-    setShowSubmitWarning(false);
-    const sessionId = localStorage.getItem('sessionId');
-    if (!sessionId) { setLoading(false); return alert("Session ID missing."); }
-
-    const formattedAnswers = Object.entries(answers).filter(([, val]) => val !== null).map(([key, val]) => ({ questionId: key, selectedOption: val }));
-    
-    try {
-      const response = await api.post(`/sessions/${sessionId}/submit`, { answers: formattedAnswers });
-      if (response.data.success) {
-        localStorage.removeItem(`quiz-progress-${sessionId}`); // Clear saved progress on successful submission
-        sessionStorage.setItem('quizResults', JSON.stringify(response.data.data));
-        router.push('/quiz/results');
-      } else {
-         alert(`Submission failed: ${response.data.message || 'Error.'}`);
-         setLoading(false);
-      }
-    } catch (err) {
-      alert("An error occurred during submission.");
-      setLoading(false);
-    }
-  }, [answers, router]);
-
+  // --- Timer ---
   useEffect(() => {
-    if (timeLeft === 0) handleSubmitQuiz(true);
+    if (timeLeft === 0) handleSubmitQuizRef.current(true, "Quiz automatically submitted because time ran out.");
     if (!loading && timeLeft > 0) {
-      const timer = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
+      const timer = setInterval(() => setTimeLeft(prev => prev > 0 ? prev - 1 : 0), 1000);
       return () => clearInterval(timer);
     }
-  }, [loading, timeLeft, handleSubmitQuiz]);
+  }, [loading, timeLeft]);
 
   const handleSelect = (qId, option) => setAnswers(p => ({ ...p, [qId]: option }));
   const handleBookmark = (qId) => setBookmarked(p => ({ ...p, [qId]: !p[qId] }));
@@ -133,7 +143,9 @@ export default function QuestionPage() {
   // --- Proctoring Logic ---
   const enterFullscreen = useCallback(async () => {
     try {
-      if (mainWrapperRef.current && mainWrapperRef.current.requestFullscreen) await mainWrapperRef.current.requestFullscreen();
+      if (mainWrapperRef.current && mainWrapperRef.current.requestFullscreen) {
+        await mainWrapperRef.current.requestFullscreen({ navigationUI: "hide" });
+      }
     } catch (err) { console.warn("Fullscreen request failed."); }
   }, []);
 
@@ -143,8 +155,20 @@ export default function QuestionPage() {
 
   useEffect(() => {
     const handleVisibilityChange = () => { if (document.hidden) setTabSwitchViolations(p => p + 1); };
-    const handleFullscreenChange = () => setFullscreenExited(!document.fullscreenElement);
-    setFullscreenExited(!document.fullscreenElement);
+    const handleFullscreenChange = () => {
+      if (!document.fullscreenElement) {
+        setFullscreenExitCount(count => {
+          const newCount = count + 1;
+          if (newCount >= 4) {
+            setIsQuizTerminated(true);
+            handleSubmitQuizRef.current(true, "Quiz terminated due to multiple fullscreen exits.");
+          } else {
+            setFullscreenWarning({ count: newCount });
+          }
+          return newCount;
+        });
+      }
+    };
     document.addEventListener("visibilitychange", handleVisibilityChange);
     document.addEventListener("fullscreenchange", handleFullscreenChange);
     return () => {
@@ -153,10 +177,7 @@ export default function QuestionPage() {
     };
   }, []);
   
-  const handleWrapperKeyDown = (e) => {
-    if (e.key === "F12" || (e.ctrlKey && ['p','u','s','c','x','i','j'].some(k => e.key.toLowerCase() === k))) e.preventDefault();
-    if (e.altKey && e.key.toLowerCase() === 'tab') e.preventDefault();
-  };
+  const handleWrapperKeyDown = (e) => e.preventDefault();
 
   // --- Render Logic ---
   if (loading && questions.length === 0) {
@@ -195,6 +216,17 @@ export default function QuestionPage() {
   }
 
   const unansweredQuestionsCount = Object.values(answers).filter(a => a === null).length;
+  
+  if (isQuizTerminated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-center p-4">
+        <div className="bg-white p-8 rounded-lg shadow-md max-w-md">
+            <h2 className="text-2xl font-bold text-red-600 mb-4">Quiz Terminated</h2>
+            <p className="text-gray-700">Your quiz was automatically submitted due to repeated proctoring violations.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div 
@@ -204,12 +236,12 @@ export default function QuestionPage() {
       ref={mainWrapperRef}
       tabIndex={-1}
     >
-      {fullscreenExited && (
+      {fullscreenWarning && (
         <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-[9999]">
           <div className="bg-white p-8 rounded-lg text-center shadow-2xl max-w-sm">
-            <h2 className="text-2xl font-bold text-red-600 mb-4">Action Required</h2>
-            <p className="text-gray-700 mb-6">Fullscreen is required. Click below to continue.</p>
-            <button onClick={enterFullscreen} className="bg-blue-600 text-white font-bold px-6 py-3 rounded-lg w-full">Enter Fullscreen</button>
+            <h2 className="text-2xl font-bold text-yellow-600 mb-4">Warning ({fullscreenWarning.count}/3)</h2>
+            <p className="text-gray-700 mb-6">You have exited fullscreen. After 3 warnings, your quiz will be automatically submitted.</p>
+            <button onClick={() => { enterFullscreen(); setFullscreenWarning(null); }} className="bg-blue-600 text-white font-bold px-6 py-3 rounded-lg w-full">Re-enter Fullscreen</button>
           </div>
         </div>
       )}
@@ -287,3 +319,4 @@ export default function QuestionPage() {
     </div>
   );
 }
+
