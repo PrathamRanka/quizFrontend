@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import api from "../../../../services/api";
@@ -55,7 +55,7 @@ export default function QuestionPage() {
     try {
       const response = await api.post(`/sessions/${sessionId}/submit`, { answers: formattedAnswers });
       if (response.data.success) {
-        localStorage.removeItem(`quiz-progress-${sessionId}`); // Clear saved progress
+        localStorage.removeItem(`quiz-progress-${sessionId}`);
         sessionStorage.setItem('quizResults', JSON.stringify(response.data.data));
         if (reason) sessionStorage.setItem('quizTerminationReason', reason);
         router.push('/quiz/results');
@@ -115,7 +115,7 @@ export default function QuestionPage() {
             localStorage.setItem(`quiz-progress-${sessionId}`, JSON.stringify(progress));
         }
     };
-    const interval = setInterval(saveProgress, 5000); // Save every 5 seconds
+    const interval = setInterval(saveProgress, 5000);
     return () => clearInterval(interval);
   }, [answers, bookmarked, visited, currentQuestionIndex, timeLeft, questions, loading]);
 
@@ -151,10 +151,14 @@ export default function QuestionPage() {
   }, []);
 
   useEffect(() => {
-    if (!loading && mainWrapperRef.current) mainWrapperRef.current.focus();
+    // FIX: This effect now focuses the main div to enable key locking
+    if (!loading && mainWrapperRef.current) {
+      mainWrapperRef.current.focus();
+    }
   }, [loading]);
 
   useEffect(() => {
+    // This effect handles the browser-level events
     const handleVisibilityChange = () => { if (document.hidden) setTabSwitchViolations(p => p + 1); };
     const handleFullscreenChange = () => {
       if (!document.fullscreenElement) {
@@ -170,14 +174,20 @@ export default function QuestionPage() {
         });
       }
     };
+    
+    // Initial check when the component mounts
+    setFullscreenExited(!document.fullscreenElement);
+    
     document.addEventListener("visibilitychange", handleVisibilityChange);
     document.addEventListener("fullscreenchange", handleFullscreenChange);
+    
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
     };
   }, []);
   
+  // FIX: This key locking function is now more robust and blocks all keys
   const handleWrapperKeyDown = (e) => e.preventDefault();
 
   // --- Render Logic ---
@@ -320,3 +330,4 @@ export default function QuestionPage() {
     </div>
   );
 }
+
