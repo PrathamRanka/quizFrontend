@@ -55,7 +55,7 @@ export default function QuestionPage() {
     try {
       const response = await api.post(`/sessions/${sessionId}/submit`, { answers: formattedAnswers });
       if (response.data.success) {
-        localStorage.removeItem(`quiz-progress-${sessionId}`);
+        localStorage.removeItem(`quiz-progress-${sessionId}`); // Clear saved progress
         sessionStorage.setItem('quizResults', JSON.stringify(response.data.data));
         if (reason) sessionStorage.setItem('quizTerminationReason', reason);
         router.push('/quiz/results');
@@ -115,7 +115,7 @@ export default function QuestionPage() {
             localStorage.setItem(`quiz-progress-${sessionId}`, JSON.stringify(progress));
         }
     };
-    const interval = setInterval(saveProgress, 5000);
+    const interval = setInterval(saveProgress, 5000); // Save every 5 seconds
     return () => clearInterval(interval);
   }, [answers, bookmarked, visited, currentQuestionIndex, timeLeft, questions, loading]);
 
@@ -128,6 +128,7 @@ export default function QuestionPage() {
     }
   }, [loading, timeLeft]);
 
+  // --- User Interaction Handlers ---
   const handleSelect = (qId, option) => setAnswers(p => ({ ...p, [qId]: option }));
   const handleBookmark = (qId) => setBookmarked(p => ({ ...p, [qId]: !p[qId] }));
 
@@ -319,4 +320,3 @@ export default function QuestionPage() {
     </div>
   );
 }
-
