@@ -28,9 +28,9 @@ export default function SignupPage() {
     if (!fullName || !rollNumber || !phoneNumber || !email || !password) {
       return setError('Please fill in all fields.');
     }
-    // Rule 2: Roll Number must start with 1025 and be 10 digits
-    if (!rollNumber.startsWith('1025') || rollNumber.length !== 10 || !/^\d+$/.test(rollNumber)) {
-      return setError('Invalid Roll Number. It must start with "1025" and be 10 digits long.');
+    // Rule 2: Roll Number must start with 1025 or 1024 and be 10 digits
+    if ((!rollNumber.startsWith('1025') && !rollNumber.startsWith('1024')) || rollNumber.length !== 10 || !/^\d+$/.test(rollNumber)) {
+      return setError('Invalid Roll Number. It must start with "1025" or "1024" and be 10 digits long.');
     }
     // Rule 3: Email must be a @thapar.edu address
     if (!email.endsWith('@thapar.edu')) {
