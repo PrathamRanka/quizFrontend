@@ -176,7 +176,11 @@ export default function QuestionPage() {
     };
     
     // Initial check when the component mounts
-    setFullscreenExited(!document.fullscreenElement);
+    if (!document.fullscreenElement) {
+      // Trigger the first warning immediately
+      setFullscreenWarning({ count: 1 });
+      setFullscreenExitCount(1);
+    }
     
     document.addEventListener("visibilitychange", handleVisibilityChange);
     document.addEventListener("fullscreenchange", handleFullscreenChange);
