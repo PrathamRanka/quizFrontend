@@ -5,7 +5,6 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import api from "../../../../services/api";
 
-// Helper Icon Components
 const BookmarkIcon = ({ filled }) => (
   <svg
     className="w-5 h-5"
