@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import api from '../services/api';
 import AdminRoute from '../contexts/AdminRoute'; 
-import parentNode from 'react';
 
 export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(false);
@@ -14,22 +13,20 @@ export default function AdminDashboardPage() {
     setError('');
     try {
       const response = await api.get('/admin/export-results', {
-        responseType: 'blob', // IMPORTANT: Tell axios to expect binary data (the file)
+        responseType: 'blob',
       });
 
-      // Create a URL for the blob data
-      const url = window.URL.createObjectURL(new Blob([response.data]));
       
-      // Create a temporary link element to trigger the download
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', 'quiz-results.csv'); // Set the desired filename
-      
-      // Append to the body, click, and then remove
+      link.setAttribute('download', 'quiz-results.csv');
+
       document.body.appendChild(link);
       link.click();
       
-      // Clean up by revoking the object URL and removing the link
+      
       window.URL.revokeObjectURL(url);
       if (link.parentNode) {
         link.parentNode.removeChild(link);
