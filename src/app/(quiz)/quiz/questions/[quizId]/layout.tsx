@@ -274,6 +274,20 @@ export default function QuizLayout({ children }: { children: ReactNode }) {
       if (document.hidden) setTabSwitchViolations((p) => p + 1);
     };
 
+    // --- Add this new useEffect to watch for tab switch violations ---
+useEffect(() => {
+  if (tabSwitchViolations >= 5) {
+    // Check if the quiz isn't already terminated
+    if (isQuizTerminated) return;
+
+    setIsQuizTerminated(true);
+    handleSubmitQuizRef.current(
+      true,
+      "Quiz terminated due to excessive tab switching."
+    );
+  }
+}, [tabSwitchViolations, isQuizTerminated]); // Run this check whenever 'tabSwitchViolations' changes
+
     const handleFullscreenChange = () => {
       if (!document.fullscreenElement) {
         setFullscreenExitCount((count) => {
