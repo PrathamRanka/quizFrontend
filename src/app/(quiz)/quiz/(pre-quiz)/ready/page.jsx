@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import  { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import api from "../../../../services/api";
+// import api from "../../../../services/api";
 
 export default function ReadyPage() {
   const router = useRouter();
@@ -10,23 +10,7 @@ export default function ReadyPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    const checkServerStatus = async () => {
-      try {
-        const response = await api.get("/status");
-        if (response.data?.data?.status === "running") {
-          setIsServerReady(true);
-        } else {
-          setError("The quiz server is not ready yet.");
-        }
-      } catch (err) {
-        setError("Could not connect to the server.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    checkServerStatus();
-  }, []);
+
 
   const handleStartQuiz = () => {
     const quizId = localStorage.getItem('quizId');
